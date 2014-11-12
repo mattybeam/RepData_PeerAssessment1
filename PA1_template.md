@@ -1,18 +1,23 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
-```{r load_packages,echo=FALSE}
-library(dplyr)
-library(ggplot2)
+
+```
+## 
+## Attaching package: 'dplyr'
+## 
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
 ```
 ## Loading and preprocessing the data
 In the first step of this assignment, we load and process the data to make it suitable for analysis.
 
-```{r load_data}
+
+```r
 activity <- read.csv("../activity.csv")
 activity$date <- as.Date(activity$date,format = "%Y-%m-%d") # Make date class of date  
 ```
@@ -20,7 +25,8 @@ activity$date <- as.Date(activity$date,format = "%Y-%m-%d") # Make date class of
 ## What is mean total number of steps taken per day?
 Now, we can determine the mean total number of steps taken per day. We will ignore the missing data and make a histogram of the total number of steps taken each day. 
 
-```{r hist_steps}
+
+```r
 by_day <- group_by(activity,date) %>%
   summarise(total_steps = sum(steps,na.rm=TRUE))
 qplot(total_steps, 
@@ -33,18 +39,27 @@ qplot(total_steps,
       ylab = "Frequency")
 ```
 
+![](./PA1_template_files/figure-html/hist_steps-1.png) 
+
 Next, we can calculate the mean and median total number of steps taken per day.
 
-```{r mean_median_steps}
+
+```r
 data.frame(mean = mean(by_day$total_steps), median = quantile(by_day$total_steps,probs = 0.5))
 ```
 
-We see the mean total number of steps taken per day is `r round(mean(by_day$total_steps),2)` and the median is `r quantile(by_day$total_steps,probs = 0.5)`. 
+```
+##        mean median
+## 50% 9354.23  10395
+```
+
+We see the mean total number of steps taken per day is 9354.23 and the median is 1.0395\times 10^{4}. 
 
 ## What is the average daily activity pattern?
 To see the average daily activity pattern, we make a time-series plot of the 5-minute interval and the average number of steps taken, averaged across all days.
 
-```{r daily_activity}
+
+```r
 by_interval <- group_by(activity,interval) %>%
   summarise(mean_steps = mean(steps,na.rm = TRUE))
 ggplot(by_interval, aes(interval, mean_steps)) + geom_line() +
@@ -52,10 +67,17 @@ ggplot(by_interval, aes(interval, mean_steps)) + geom_line() +
   labs(title = "Average Daily Activity Pattern")
 ```
 
+![](./PA1_template_files/figure-html/daily_activity-1.png) 
+
 Now, we find which 5-minute interval, on average across all days in the dataset, contains the maximum number of steps.
 
-```{r int_max_steps}
+
+```r
 by_interval[which.max(by_interval$mean_steps),1]
+```
+
+```
+## [1] 835
 ```
 
 We see that it is the 5-minute interval starting at 8:35 am.
@@ -63,20 +85,27 @@ We see that it is the 5-minute interval starting at 8:35 am.
 ## Imputing missing values
 There are missing values in the dataset. Let's see how many there are.
 
-```{r count_NAs}
+
+```r
 sum(is.na(activity$steps))
 ```
 
-There are `r sum(is.na(activity$steps))` missing values in the dataset. We can impute the missing values by using the mean for the 5-minute interval where the data is missing.
+```
+## [1] 2304
+```
 
-```{r impute_missing}
+There are 2304 missing values in the dataset. We can impute the missing values by using the mean for the 5-minute interval where the data is missing.
+
+
+```r
 where_na <- is.na(activity$steps)
 activity$steps[where_na] <- rep(by_interval$mean_steps,61)[where_na]
 ```
 
 We again make a histogram of the number of steps taken each day and calculate and report the mean and median number of steps taken per day, this time with the imputed missing data.
 
-```{r hist_steps2}
+
+```r
 by_day2 <- group_by(activity,date) %>%
   summarise(total_steps = sum(steps,na.rm=TRUE))
 qplot(total_steps, 
@@ -87,16 +116,26 @@ qplot(total_steps,
       main = "Histogram of Total Steps Taken Each Day (Oct. 1, 2012 to Nov. 30, 2012)",
       xlab = "Total Steps",
       ylab = "Frequency")
+```
 
+![](./PA1_template_files/figure-html/hist_steps2-1.png) 
+
+```r
 data.frame(mean = mean(by_day2$total_steps), median = quantile(by_day2$total_steps,probs = 0.5))
 ```
 
-Now, the mean number of steps taken per day is `r round(mean(by_day2$total_steps),2)` and the median is `r quantile(by_day2$total_steps,probs = 0.5)`. These values both differ from the case when we ignored the missing data; they are higher. Imputing missing data increases the estimates of the total daily number of steps, since the once-missing data are no longer ignored (essentially set to zero), but now can have a positive value. 
+```
+##         mean   median
+## 50% 10766.19 10766.19
+```
+
+Now, the mean number of steps taken per day is 1.076619\times 10^{4} and the median is 1.0766189\times 10^{4}. These values both differ from the case when we ignored the missing data; they are higher. Imputing missing data increases the estimates of the total daily number of steps, since the once-missing data are no longer ignored (essentially set to zero), but now can have a positive value. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 We can create a new factor variable in the dataset indicating whether or not a given date is a weekday or a weekend.
 
-```{r weekdays}
+
+```r
 activity$day <- weekdays(activity$date)
 activity$day <- ifelse(activity$day %in% c("Saturday","Sunday"),"Weekend","Weekday") %>%
     as.factor
@@ -104,7 +143,8 @@ activity$day <- ifelse(activity$day %in% c("Saturday","Sunday"),"Weekend","Weekd
 
 Now, we make a panel plot containing a time-series plot of the 5-minute interval and the average number of steps taken, averaged across all weekday days or weekend days.
 
-```{r weekday_end_plot}
+
+```r
 by_interval2 <- regroup(activity,list(quote(day),quote(interval))) %>%
   summarise(mean_steps = mean(steps))
 ggplot(by_interval2, aes(interval, mean_steps)) + geom_line() +
@@ -112,6 +152,8 @@ ggplot(by_interval2, aes(interval, mean_steps)) + geom_line() +
   xlab("5-minute Interval") + ylab("Average Number of Steps, Across Days") + 
   labs(title = "Average Daily Activity Pattern")
 ```
+
+![](./PA1_template_files/figure-html/weekday_end_plot-1.png) 
 
 
 It looks like the activity pattern is slightly different on weekends and weekdays. People start moving around later and stay active later on weekends. 
