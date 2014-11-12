@@ -19,7 +19,12 @@ In the first step of this assignment, we load and process the data to make it su
 
 ```r
 activity <- read.csv("../activity.csv")
-activity$date <- as.Date(activity$date,format = "%Y-%m-%d") # Make date class of date  
+activity$date <- as.Date(activity$date,format = "%Y-%m-%d") # Make date class of date 
+activity$interval <- ifelse(nchar(activity$interval) == 1,paste0("000",activity$interval),activity$interval)
+activity$interval <- ifelse(nchar(activity$interval)==2,paste0("00",activity$interval),activity$interval)
+activity$interval <- ifelse(nchar(activity$interval)==3,paste0("0",activity$interval),activity$interval)
+activity$interval <- (as.numeric(substr(activity$interval,1,2)) * 60 + 
+                          as.numeric(substr(activity$interval,3,4))) / 1440 # Get interval in terms of fraction of day
 ```
 
 ## What is mean total number of steps taken per day?
@@ -63,7 +68,7 @@ To see the average daily activity pattern, we make a time-series plot of the 5-m
 by_interval <- group_by(activity,interval) %>%
   summarise(mean_steps = mean(steps,na.rm = TRUE))
 ggplot(by_interval, aes(interval, mean_steps)) + geom_line() +
-  xlab("5-minute Interval") + ylab("Average Number of Steps, Across Days") + 
+  xlab("5-minute Interval (Fraction of Day)") + ylab("Average Number of Steps, Across Days") + 
   labs(title = "Average Daily Activity Pattern")
 ```
 
@@ -73,14 +78,14 @@ Now, we find which 5-minute interval, on average across all days in the dataset,
 
 
 ```r
-by_interval[which.max(by_interval$mean_steps),1]
+times(by_interval[which.max(by_interval$mean_steps),1])
 ```
 
 ```
-## [1] 835
+## [1] 08:35:00
 ```
 
-We see that it is the 5-minute interval starting at 8:35 am.
+We see that it is the 5-minute interval starting at 0.3576389.
 
 ## Imputing missing values
 There are missing values in the dataset. Let's see how many there are.
@@ -149,14 +154,19 @@ by_interval2 <- regroup(activity,list(quote(day),quote(interval))) %>%
   summarise(mean_steps = mean(steps))
 ggplot(by_interval2, aes(interval, mean_steps)) + geom_line() +
     facet_grid(day ~ .) +
-  xlab("5-minute Interval") + ylab("Average Number of Steps, Across Days") + 
+  xlab("5-minute Interval (Fraction of Day)") + ylab("Average Number of Steps, Across Days") + 
   labs(title = "Average Daily Activity Pattern")
 ```
 
 ![](./PA1_template_files/figure-html/weekday_end_plot-1.png) 
 
 
-It looks like the activity pattern is slightly different on weekends and weekdays. People start moving around later and stay active later on weekends. 
+```
+## [1] 09:15:00
+```
+
+
+It looks like the activity pattern is slightly different on weekends and weekdays. People start moving around later and stay active later on weekends. The maximum activity level occurs at 0.3854167, nearly an hour later than on weekdays. 
 
 
 
